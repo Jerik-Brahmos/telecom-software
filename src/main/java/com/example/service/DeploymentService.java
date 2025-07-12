@@ -69,7 +69,8 @@ public class DeploymentService {
 
     private void runGitCommands() throws IOException, InterruptedException {
         runCommand(List.of("git", "add", "."), REPO_PATH);
-        runCommand(List.of("git", "commit", "-m", "Auto-push deployment YAML"), REPO_PATH);
+        runCommand(List.of("git", "commit", "-m", "Auto-push deployment YAML", "--allow-empty"), REPO_PATH);
+
         runCommand(List.of("git", "push", "origin", "main"), REPO_PATH);
     }
 
