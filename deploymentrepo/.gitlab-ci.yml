@@ -1,5 +1,6 @@
+image: ruby:3.1
+
 stages:
-  - build
   - deploy
 
 deploy-job:
@@ -7,6 +8,5 @@ deploy-job:
   script:
     - echo "🚀 Starting deployment"
     - ls -l
-    - cat deploymentrepo/myapp-deployment.yaml
+    - cat *.yaml
     - echo "✅ Deployment simulation complete"
-
