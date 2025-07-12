@@ -1,31 +1,11 @@
-image: docker:latest
-
-services:
-  - docker:dind
-
 stages:
-  - build
   - deploy
 
-variables:
-  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
-
-before_script:
-  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
-
-build:
-  stage: build
-  script:
-    - echo "🔧 Building Docker Image"
-    - docker build -t $IMAGE_TAG .
-    - docker push $IMAGE_TAG
-
-deploy:
+deploy_to_k8s:
   stage: deploy
-  image: bitnami/kubectl:latest
   script:
-    - echo "📝 Updating Helm YAML"
-    - sed -i "s|nginx:latest|$IMAGE_TAG|g" myapp-deployment.yaml
-    - echo "📦 Final YAML:" && cat myapp-deployment.yaml
-    - echo "🚀 Simulated deployment"
-    # - kubectl apply -f myapp-deployment.yaml  <-- enable when ready
+    - echo "🚀 Starting deployment"
+    - cat *.yaml  # optional: show content
+    - echo "✅ YAML ready for deployment"
+  tags:
+    - shell
