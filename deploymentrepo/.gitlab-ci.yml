@@ -5,7 +5,7 @@ deploy_to_k8s:
   stage: deploy
   script:
     - echo "🚀 Starting deployment"
-    - cat *.yaml  # optional: show content
+    - cat deploymentrepo/myapp-deployment.yaml  # optional: show content
     - echo "✅ YAML ready for deployment"
   tags:
     - shell
