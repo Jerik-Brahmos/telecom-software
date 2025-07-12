@@ -3,77 +3,42 @@ package com.example.deploymentapi.service;
 import com.example.deploymentapi.dto.DeployRequest;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.util.Arrays;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.List;
 
 @Service
 public class DeploymentService {
 
-    public void handleDeployment(DeployRequest request) {
-        String yamlContent = generateHelmYaml(request);
-        String fileName = request.getAppName() + "-deployment.yaml";
+    private static final String REPO_PATH = "deploymentrepo";
+    private static final String YAML_FILE_NAME = "myapp-deployment.yaml";
 
+    public String handleDeployment(DeployRequest request) {
         try {
-            // Save YAML locally
-            FileWriter writer = new FileWriter(fileName);
-            writer.write(yamlContent);
-            writer.close();
-            System.out.println("✅ YAML file generated: " + fileName);
+            // Step 1: Generate YAML
+            String yamlContent = generateHelmYaml(request);
 
-            // Git commands (Windows cmd style)
-            String[] commands = {
-                    "cmd.exe", "/c",
-                    String.join(" && ", Arrays.asList(
-                            "rmdir /s /q deploymentrepo", // Delete if exists
-                            "git clone https://gitlab.com/prajushar-group/deploymentrepo.git",
-                            "move " + fileName + " deploymentrepo\\",
-                            "cd deploymentrepo",
-                            "git config user.name \"Praju\"",
-                            "git config user.email \"prajushar@karunya.edu.in\"",
-                            "git add .",
-                            "git commit -m \"Add deployment YAML for " + request.getAppName() + "\"",
-                            "git push origin main"
-                    ))
-            };
+            // Step 2: Write YAML to a file
+            Files.write(Paths.get(YAML_FILE_NAME), yamlContent.getBytes());
 
-            ProcessBuilder pb = new ProcessBuilder(commands);
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-
-            // Output console logs
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
-                }
+            // Step 3: Ensure deploymentrepo exists
+            Path repoPath = Paths.get(REPO_PATH);
+            if (!Files.exists(repoPath)) {
+                Files.createDirectories(repoPath);
             }
 
-            process.waitFor();
-            System.out.println("✅ Git operations completed.");
+            // Step 4: Move YAML file into deploymentrepo/
+            Path targetPath = repoPath.resolve(YAML_FILE_NAME);
+            Files.move(Paths.get(YAML_FILE_NAME), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-            // Trigger GitLab CI/CD pipeline
-            String triggerCurl = String.format(
-                    "curl -X POST https://gitlab.com/api/v4/projects/71560534/trigger/pipeline " +
-                            "-F token=glptt-ccf4a6a4e498ec7dba91da716e6dc0ad48b77171 -F ref=main"
-            );
+            // Step 5: Commit and push to GitLab
+            runGitCommands();
 
-            String[] curlCommand = {"cmd.exe", "/c", triggerCurl};
-            ProcessBuilder trigger = new ProcessBuilder(curlCommand);
-            trigger.redirectErrorStream(true);
-            Process triggerProcess = trigger.start();
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(triggerProcess.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
-                }
-            }
-
-            triggerProcess.waitFor();
-            System.out.println("✅ GitLab pipeline triggered.");
-
-        } catch (IOException | InterruptedException e) {
+            return "✅ YAML pushed & pipeline triggered!";
+        } catch (Exception e) {
             e.printStackTrace();
+            return "❌ Deployment failed: " + e.getMessage();
         }
     }
 
@@ -94,11 +59,28 @@ public class DeploymentService {
                         app: %s
                     spec:
                       containers:
-                      - name: %s
-                        image: %s
-                        ports:
-                        - containerPort: 8081
+                        - name: %s
+                          image: %s
+                          ports:
+                            - containerPort: 80
                 """, request.getAppName(), request.getAppName(), request.getAppName(),
                 request.getAppName(), request.getDockerImage());
+    }
+
+    private void runGitCommands() throws IOException, InterruptedException {
+        runCommand(List.of("git", "add", "."), REPO_PATH);
+        runCommand(List.of("git", "commit", "-m", "Auto-push deployment YAML"), REPO_PATH);
+        runCommand(List.of("git", "push", "origin", "main"), REPO_PATH);
+    }
+
+    private void runCommand(List<String> command, String directory) throws IOException, InterruptedException {
+        ProcessBuilder builder = new ProcessBuilder(command);
+        builder.directory(new File(directory));
+        builder.inheritIO(); // Optional: show output in console
+        Process process = builder.start();
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new RuntimeException("Command failed: " + String.join(" ", command));
+        }
     }
 }
