@@ -1,11 +1,12 @@
 stages:
+  - build
   - deploy
 
-deploy_to_k8s:
+deploy-job:
   stage: deploy
   script:
     - echo "🚀 Starting deployment"
-    - cat deploymentrepo/myapp-deployment.yaml  # optional: show content
-    - echo "✅ YAML ready for deployment"
-  tags:
-    - shell
+    - ls -l
+    - cat deploymentrepo/myapp-deployment.yaml
+    - echo "✅ Deployment simulation complete"
+
