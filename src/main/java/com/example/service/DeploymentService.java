@@ -3,39 +3,82 @@ package com.example.deploymentapi.service;
 import com.example.deploymentapi.dto.DeployRequest;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.util.Arrays;
 
 @Service
 public class DeploymentService {
 
     public void handleDeployment(DeployRequest request) {
-        System.out.println("Deploying: " + request.getAppName());
-        System.out.println("Version: " + request.getVersion());
-        System.out.println("Docker Image: " + request.getDockerImage());
+        String yamlContent = generateHelmYaml(request);
+        String fileName = request.getAppName() + "-deployment.yaml";
 
         try {
-            // Step 1: Generate Helm YAML
-            String yamlContent = generateHelmYaml(request);
-            File file = new File("deployment-" + request.getAppName() + ".yaml");
-            FileWriter writer = new FileWriter(file);
+            // Save YAML locally
+            FileWriter writer = new FileWriter(fileName);
             writer.write(yamlContent);
             writer.close();
+            System.out.println("✅ YAML file generated: " + fileName);
 
-            // Step 2: Push to GitLab
-            pushToGitLab(file);
+            // Git commands (Windows cmd style)
+            String[] commands = {
+                    "cmd.exe", "/c",
+                    String.join(" && ", Arrays.asList(
+                            "rmdir /s /q deploymentrepo", // Delete if exists
+                            "git clone https://gitlab.com/prajushar-group/deploymentrepo.git",
+                            "move " + fileName + " deploymentrepo\\",
+                            "cd deploymentrepo",
+                            "git config user.name \"Praju\"",
+                            "git config user.email \"prajushar@karunya.edu.in\"",
+                            "git add .",
+                            "git commit -m \"Add deployment YAML for " + request.getAppName() + "\"",
+                            "git push origin main"
+                    ))
+            };
 
-            // Step 3: Trigger GitLab CI
-            triggerGitLabPipeline();
+            ProcessBuilder pb = new ProcessBuilder(commands);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
 
-        } catch (Exception e) {
+            // Output console logs
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                }
+            }
+
+            process.waitFor();
+            System.out.println("✅ Git operations completed.");
+
+            // Trigger GitLab CI/CD pipeline
+            String triggerCurl = String.format(
+                    "curl -X POST https://gitlab.com/api/v4/projects/71560534/trigger/pipeline " +
+                            "-F token=glptt-ccf4a6a4e498ec7dba91da716e6dc0ad48b77171 -F ref=main"
+            );
+
+            String[] curlCommand = {"cmd.exe", "/c", triggerCurl};
+            ProcessBuilder trigger = new ProcessBuilder(curlCommand);
+            trigger.redirectErrorStream(true);
+            Process triggerProcess = trigger.start();
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(triggerProcess.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                }
+            }
+
+            triggerProcess.waitFor();
+            System.out.println("✅ GitLab pipeline triggered.");
+
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
 
     private String generateHelmYaml(DeployRequest request) {
-        return """
+        return String.format("""
                 apiVersion: apps/v1
                 kind: Deployment
                 metadata:
@@ -51,57 +94,11 @@ public class DeploymentService {
                         app: %s
                     spec:
                       containers:
-                        - name: %s
-                          image: %s
-                          ports:
-                            - containerPort: 80
-                """.formatted(
-                request.getAppName(),
-                request.getAppName(),
-                request.getAppName(),
-                request.getAppName(),
-                request.getDockerImage()
-        );
-    }
-
-    private void pushToGitLab(File file) throws IOException, InterruptedException {
-        String repoUrl = "https://gitlab.com/your-username/your-repo.git";
-        String branch = "main";
-
-        ProcessBuilder builder = new ProcessBuilder(
-                "bash", "-c",
-                String.join(" && ",
-                        "git config --global user.email \"you@example.com\"",
-                        "git config --global user.name \"Your Name\"",
-                        "rm -rf temp-git",
-                        "git clone " + repoUrl + " temp-git",
-                        "cp " + file.getAbsolutePath() + " temp-git/",
-                        "cd temp-git",
-                        "git add .",
-                        "git commit -m \"Add deployment file\"",
-                        "git push origin " + branch
-                )
-        );
-
-        builder.inheritIO();
-        Process process = builder.start();
-        process.waitFor();
-    }
-
-    private void triggerGitLabPipeline() throws IOException {
-        String projectId = "your_project_id";
-        String triggerToken = "your_gitlab_trigger_token";
-        String apiUrl = "https://gitlab.com/api/v4/projects/" + projectId + "/trigger/pipeline";
-
-        ProcessBuilder builder = new ProcessBuilder(
-                "curl",
-                "--request", "POST",
-                "--form", "token=" + triggerToken,
-                "--form", "ref=main",
-                apiUrl
-        );
-
-        builder.inheritIO();
-        builder.start();
+                      - name: %s
+                        image: %s
+                        ports:
+                        - containerPort: 8081
+                """, request.getAppName(), request.getAppName(), request.getAppName(),
+                request.getAppName(), request.getDockerImage());
     }
 }
