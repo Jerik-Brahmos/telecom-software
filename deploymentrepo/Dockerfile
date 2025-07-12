@@ -1,3 +1,4 @@
-# Dockerfile
-FROM nginx:latest
-COPY . /usr/share/nginx/html
+FROM openjdk:17-jdk-slim
+COPY . /app
+WORKDIR /app
+CMD ["java", "-jar", "app.jar"]
