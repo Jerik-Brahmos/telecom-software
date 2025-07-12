@@ -6,5 +6,5 @@ deploy:
   script:
     - echo "🚀 Starting deployment"
     - ls -l
-    - cat *.yaml
+    - cat deploymentrepo/*.yaml
     - echo "✅ Deployment simulation complete"
