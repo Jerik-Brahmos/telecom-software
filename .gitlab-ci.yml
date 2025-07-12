@@ -1,0 +1,10 @@
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+  script:
+    - echo "🚀 Starting deployment"
+    - ls -l
+    - cat *.yaml
+    - echo "✅ Deployment simulation complete"
