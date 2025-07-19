@@ -1,0 +1,10 @@
+loki:
+  deploymentMode: SingleBinary
+  commonConfig:
+    replication_factor: 1
+  ring:
+    heartbeat_timeout: 60
+  storage:
+    type: filesystem
+    filesystem:
+      directory: /data/loki

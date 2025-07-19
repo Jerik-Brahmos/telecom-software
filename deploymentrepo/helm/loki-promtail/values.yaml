@@ -6,6 +6,7 @@ pipelineStages:
         - regex:
             expression: ".*"
         - labels:
-            app:
+            app: myapp
+            namespace: default
 clients:
   - url: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
