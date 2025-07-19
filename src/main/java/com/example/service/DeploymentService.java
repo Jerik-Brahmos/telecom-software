@@ -1,6 +1,6 @@
-package com.example.deploymentapi.service;
+package com.example.service;
 
-import com.example.deploymentapi.dto.DeployRequest;
+import com.example.dto.DeployRequest;
 import org.springframework.stereotype.Service;
 
 import java.io.File;

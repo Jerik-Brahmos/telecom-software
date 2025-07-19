@@ -1,7 +1,7 @@
-package com.example.deploymentapi.controller;
+package com.example.controller;
 
-import com.example.deploymentapi.dto.DeployRequest;
-import com.example.deploymentapi.service.DeploymentService;
+import com.example.dto.DeployRequest;
+import com.example.service.DeploymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
