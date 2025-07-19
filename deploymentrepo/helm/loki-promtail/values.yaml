@@ -1,5 +1,5 @@
 pipelineStages:
-  - docker:
+  - docker: {}
   - match:
       selector: '{app="myapp"}'
       stages:
