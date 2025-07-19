@@ -15,8 +15,8 @@ spec:
     metadata:
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9113"
-        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
       labels:
         {{- include "myapp.labels" . | nindent 8 }}
           {{- with .Values.podLabels }}
