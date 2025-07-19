@@ -6,11 +6,11 @@ metadata:
   labels:
     {{- include "myapp.labels" . | nindent 4 }}
 spec:
+  endpoints:
+    - port: http
+      interval: {{ .Values.prometheus.monitor.interval | default "30s" }}
+      scrapeTimeout: {{ .Values.prometheus.monitor.scrapeTimeout | default "10s" }}
   selector:
     matchLabels:
       {{- include "myapp.selectorLabels" . | nindent 6 }}
-  endpoints:
-    - port: http
-      path: /actuator/prometheus
-      interval: 15s
-  {{- end }}
+{{- end }}

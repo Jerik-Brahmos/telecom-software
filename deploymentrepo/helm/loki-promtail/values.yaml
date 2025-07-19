@@ -1,0 +1,11 @@
+pipelineStages:
+  - docker:
+  - match:
+      selector: '{app="myapp"}'
+      stages:
+        - regex:
+            expression: ".*"
+        - labels:
+            app:
+clients:
+  - url: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
