@@ -7,7 +7,7 @@ metadata:
     {{- include "myapp.labels" . | nindent 4 }}
 spec:
   endpoints:
-    - port: metrics
+    - port: metrics # <--- Ensure this matches the name given to containerPort 9113 in myapp's deployment service
       interval: {{ .Values.prometheus.monitor.interval | default "30s" }}
       scrapeTimeout: {{ .Values.prometheus.monitor.scrapeTimeout | default "10s" }}
   selector:

@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploymentapi
+  labels:
+    app: deploymentapi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deploymentapi
+  template:
+    metadata:
+      labels:
+        app: deploymentapi
+    spec:
+      containers:
+        - name: deploymentapi
+          image: jerikbrahmos/deploymentapi:latest # <<-- IMPORTANT: Replace with your actual Docker image name and tag
+          ports:
+            - containerPort: 8081 # Ensure this matches the port your Spring Boot app listens on
+          env:
+            - name: PROMETHEUS_URL
+              value: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+            - name: LOKI_URL
+              value: http://loki-gateway.monitoring.svc.cluster.local:80
+          # Add resource limits/requests if needed for production
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "200m"
+              memory: "256Mi"

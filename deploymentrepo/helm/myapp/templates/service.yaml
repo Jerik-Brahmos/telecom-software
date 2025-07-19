@@ -8,12 +8,12 @@ spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: http # This maps to the main app's HTTP port (80)
+      targetPort: http
       protocol: TCP
-      name: http
+      name: http # Main application HTTP port
     - port: 9113 # Expose the prometheus exporter port
       targetPort: 9113
       protocol: TCP
-      name: metrics # <--- This named port is crucial for ServiceMonitor
+      name: metrics # This named port is crucial for ServiceMonitor
   selector:
     {{- include "myapp.selectorLabels" . | nindent 4 }}
